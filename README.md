@@ -29,10 +29,26 @@ Then add `SKILL.md` as a skill in Claude.
 
 ## Requirements
 
-- Claude Desktop linked to a chat with the device bridge and a WSL command tool (e.g. `wsl-exec`)
-- A chat with the `send_later` scheduling tool
-- Claude Code in WSL, signed in to the same account, with auto mode available and the `RemoteTrigger` tool
-- `python3`, `uuidgen`, `nvm`-installed Node (the runner sources `~/.nvm/nvm.sh`)
+**Windows side**
+- Windows 10/11 with WSL2 (tested on Ubuntu 24.04)
+- Claude Desktop app, with this chat linked to the computer (device bridge)
+- A WSL command MCP server registered in Claude Desktop, e.g. [`mcp-wsl-exec`](https://www.npmjs.com/package/mcp-wsl-exec), which needs Node.js on Windows
+- A Claude chat with the `send_later` scheduling tool (the scheduled-tasks feature)
+
+**WSL side**
+- Claude Code CLI (tested on 2.1.330), signed in to the **same Claude account** as the Desktop chat, with:
+  - auto mode available on your plan (`--permission-mode auto`)
+  - the `RemoteTrigger` tool
+  - access to `claude-sonnet-5` (used to fire the wake-up)
+- `bash`, `python3` (3.8+), `uuidgen` (`uuid-runtime`), `setsid` and `realpath` (`util-linux` and `coreutils`, both preinstalled on Ubuntu)
+- Optional: `nvm`. The runner sources `~/.nvm/nvm.sh` if it exists and adds `~/.local/bin` to `PATH`, so `claude` and Node can be found in non-interactive shells
+- Optional: `git` and `gh` to clone this repo
+
+On Ubuntu, install anything missing with:
+
+```sh
+sudo apt install -y python3 uuid-runtime util-linux coreutils
+```
 
 ## Scripts
 
