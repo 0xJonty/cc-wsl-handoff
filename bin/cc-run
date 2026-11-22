@@ -5,5 +5,6 @@
 # wake trigger (no text) so the supervising chat wakes. Log: <dir>/.cc/latest.jsonl
 dir=$(realpath "$1"); sid="$2"; pf=$(realpath "$3"); mode="$4"; trig="$5"; model="$6"; effort="$7"
 mkdir -p "$dir/.cc"; rm -f "$dir/.cc/status.json"
+printf %s "$trig" > "$dir/.cc/wake-trigger"   # read at exit; replace to re-point the wake
 setsid -f bash "$HOME/bin/cc-run-inner" "$dir" "$sid" "$pf" "$mode" "$trig" "$model" "$effort" >"$dir/.cc/runner.log" 2>&1 </dev/null
 sleep 3; grep -q running "$dir/.cc/status.json" 2>/dev/null && echo "started sid $sid" || { echo "FAILED to start"; cat "$dir/.cc/runner.log"; }

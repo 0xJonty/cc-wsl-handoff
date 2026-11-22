@@ -7,6 +7,7 @@ echo '{"state":"running"}' > .cc/status.json
 claude -p "$(cat "$pf")" $flag "$sid" ${model:+--model "$model"} --permission-mode auto --output-format stream-json --verbose \
   --settings "{${effort:+\"effortLevel\":\"$effort\",}\"disableClaudeAiConnectors\":true}" > "$log" 2>&1 < /dev/null
 python3 ~/bin/cc-status "$log" "$?" > .cc/status.json.tmp && mv .cc/status.json.tmp .cc/status.json
+trig=$(cat .cc/wake-trigger 2>/dev/null || printf %s "$trig")
 if [ -n "$trig" ]; then
   claude -p "Use the RemoteTrigger tool to run trigger $trig now with NO text. Reply only OK or the exact error." \
     --model claude-sonnet-5 --permission-mode auto \

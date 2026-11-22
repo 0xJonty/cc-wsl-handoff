@@ -36,16 +36,16 @@ Run a task with headless Claude Code in the user's WSL and stay idle while it wo
 3. **Schedule the wake-up.** Call `send_later` with `delay_minutes` set to about 2× the expected run time plus 10, as a fallback only. The message must name the folder and say: "read only <dir>/.cc/status.json". Keep the returned `trigger_id`.
 4. **Launch.** Run `~/bin/cc-run <dir> <uuid> <prompt-file> new <trigger_id> "<model>" "<effort>"`, using `uuidgen` for the uuid and keeping it for resumes. Pass `""` for either to use the default. It must print `started sid ...`; if it prints FAILED, show the runner.log lines.
 5. **Go idle.** Tell the user in one line what's running and that you'll wake when it stops. End the turn. Do not poll.
-6. **On wake.** Call ReadNotifications, then read only `<dir>/.cc/status.json`. If the fallback fired, also read `.cc/wake.log`.
-   - `running`: the fallback fired before the run finished. Schedule a new `send_later` and go idle again.
-   - `done` with no open questions: review the `result` text, spot-check specific files only if needed, and report to the user.
+6. **On wake.** Call ReadNotifications. Then delete this wake-up with `delete_trigger(<trigger_id>)`: an early fire does not cancel its fallback time, so it would go off again later. If the notification was the fallback itself, deleting it is harmless. Then read only `<dir>/.cc/status.json`. If the fallback fired, also read `.cc/wake.log`.
+   - `running`: the fallback fired before the run finished. Schedule a new `send_later` with a new fallback time. Re-point the running build at it by writing the new id to `<dir>/.cc/wake-trigger` (`printf %s <new trigger_id> > <dir>/.cc/wake-trigger`); the build reads this file when it exits. Go idle.
+   - `done` with no open questions: review the `result` text, spot-check specific files only if needed, and report to the user. No new wake-up is needed.
    - `done` with questions or blockers: write the answers to a new prompt file, schedule a new `send_later`, and run `cc-run <dir> <same uuid> <answers-file> resume <new trigger_id> "<model>" "<effort>"`. Go idle.
-   - `error`: run `~/bin/cc-tail <dir>/.cc/latest.jsonl 10` and decide whether to fix and resume or report.
+   - `error`: run `~/bin/cc-tail <dir>/.cc/latest.jsonl 10` and decide whether to fix and resume or report. A resume gets a new `send_later` with a new fallback time, the same as for questions.
 7. After 3 resume loops without finishing, stop and check with the user.
 
 ## Rules
 - Git and GitHub steps go in the task prompt: when to commit, and whether to `gh repo create` and push (with name and visibility). Never let the headless run decide to make anything public.
-- Each wake-up fires only once. Make a new one for every launch or resume.
+- Each wake-up fires only once. Make a new one for every launch or resume, and delete the previous one on every wake, so a stale fallback never goes off after the job is finished.
 - The wake fire carries no text; extra text is rejected. The status file carries the information.
 - Keep `wsl-exec` commands short. Commands containing `>`, `rm`, `mv` and similar need a confirmation call, which echoes the whole command back.
 - Bridge calls time out at about 80s, so never `sleep` longer than about 70s in one call.

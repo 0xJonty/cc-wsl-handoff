@@ -11,7 +11,7 @@ a signal the moment the run stops.
 3. When Claude Code exits for any reason, `cc-run-inner` writes `.cc/status.json`
    (`done` / `error`, turns, cost, final summary) and then fires the wake-up early through Claude
    Code's `RemoteTrigger` tool, with no text.
-4. The chat wakes within about a minute and reads only `status.json`. If there are questions, it
+4. The chat wakes within about a minute, deletes that wake-up's fallback (an early fire doesn't cancel it), and reads only `status.json`. If there are questions, it
    answers them and resumes the same session.
 
 This costs about one chat step per run instead of one per polling interval.
@@ -94,7 +94,7 @@ commit cadence), model and effort, project location, and done criteria and limit
 
 - **Don't use Haiku:** auto mode doesn't apply to it, so its file writes and the trigger fire are refused.
 - **The fire must carry no text:** session-bound wake-ups reject extra text (`caller_text_resume_only`).
-- **Each wake-up fires once.** Create a new one for every launch or resume.
+- **Each wake-up fires once.** Create a new one for every launch or resume, and delete it on wake. The build reads its wake-up id from `.cc/wake-trigger` when it exits, so a still-running build can be re-pointed at a new one.
 - **Keep the fallback delay generous** in case the machine sleeps or the fire fails.
 
 ## Licence
