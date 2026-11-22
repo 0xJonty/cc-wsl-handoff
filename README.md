@@ -27,6 +27,31 @@ cd cc-wsl-handoff && ./install.sh      # copies bin/cc-* to ~/bin
 
 Then add `SKILL.md` as a skill in Claude.
 
+## Agent install
+
+Paste this into your coding agent (for example Claude Code running in WSL) and let it do the setup:
+
+```text
+Install the cc-wsl-handoff skill and scripts from https://github.com/0xJonty/cc-wsl-handoff.
+
+1. Check prerequisites in WSL2 and report anything missing:
+   - `claude --version` works and Claude Code is signed in to the same Claude account I use in Claude Desktop.
+   - `python3`, `uuidgen`, `setsid` and `realpath` exist. If any are missing, give me the exact `sudo apt install -y python3 uuid-runtime util-linux coreutils` line to run myself. Do not run sudo.
+2. Clone the repo inside WSL and run `./install.sh`. Confirm ~/bin/cc-run, cc-run-inner, cc-status and cc-tail exist and are executable.
+3. Verify headless auto mode works: in a new empty folder, run
+   `claude -p "Create ok.txt containing ok, then reply done" --model claude-sonnet-5 --permission-mode auto`
+   and confirm ok.txt was written. If it is refused, tell me auto mode is unavailable on this plan or setup.
+4. Check the Windows side: claude_desktop_config.json (usually %APPDATA%\Claude\, or search %LOCALAPPDATA%) must have an MCP server that runs WSL commands. If none exists, install one: on Windows run `npm i -g mcp-wsl-exec`, back up the config, and MERGE (never overwrite other servers) an entry like
+   "wsl-exec": { "command": "node", "args": ["<npm global root>\\mcp-wsl-exec\\dist\\index.js"] }
+   using `npm root -g` for the real path.
+5. Install the skill:
+   - For Claude Code: copy SKILL.md to ~/.claude/skills/cc-wsl-handoff/SKILL.md.
+   - For Claude Desktop/claude.ai: you can't upload it yourself. Tell me to add SKILL.md under Settings > Capabilities > Skills (or ask Claude in a chat to save it as a skill).
+6. Tell me to restart Claude Desktop if the config changed. Then suggest a first test from a Desktop chat: "Use cc-wsl-handoff to have Claude Code create hello.txt in ~/cc-handoff-test." The chat should wake by itself within about a minute.
+
+Rules: never run sudo; never print tokens or credentials; back up any config file before editing it.
+```
+
 ## Requirements
 
 **Windows side**
