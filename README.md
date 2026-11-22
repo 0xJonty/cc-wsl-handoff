@@ -79,13 +79,16 @@ sudo apt install -y python3 uuid-runtime util-linux coreutils
 
 | Script | Purpose |
 |---|---|
-| `cc-run <dir> <uuid> <prompt-file> <new\|resume> [trigger-id] [model]` | Start a detached run and confirm it started |
+| `cc-run <dir> <uuid> <prompt-file> <new\|resume> [trigger-id] [model] [effort]` | Start a detached run and confirm it started |
 | `cc-run-inner` | Runs Claude Code, writes `status.json`, fires the wake-up |
 | `cc-status <log> <exit>` | Summarises a stream-json log into `status.json` |
 | `cc-tail [log] [n]` | Compact view of a run log, for debugging |
 
-Runs use `--permission-mode auto`, `effortLevel: high` and `disableClaudeAiConnectors: true` to keep
-the per-step context small.
+Runs use `--permission-mode auto` and `disableClaudeAiConnectors: true` (keeps the per-step context small).
+Model and effort are optional; pass `""` or omit them to use your Claude Code defaults.
+
+Before building, the skill asks about anything the request leaves open: Git/GitHub (repo name, visibility,
+commit cadence), model and effort, project location, and done criteria and limits.
 
 ## Gotchas
 

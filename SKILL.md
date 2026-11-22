@@ -13,19 +13,38 @@ Run a task with headless Claude Code in the user's WSL and stay idle while it wo
 - WSL Claude Code with auto mode and the `RemoteTrigger` tool.
 
 ## Procedure
+0. **Clarify before building.** Check the request for each item below. Ask only about the ones it doesn't settle, in a single AskUserQuestion call (up to 4 questions, with the recommended option first), before writing any spec or launching anything. If the user isn't there to answer (scheduled or unattended), use the defaults shown and state them at the top of the spec.
+   - **Git / GitHub:**
+     - Local git only, or a GitHub repo too?
+     - If GitHub: the repo name, public or private, and the owner (default: the signed-in `gh` account).
+     - When to commit and push: after each working milestone, or only at the end?
+     - Default: local git, commit at milestones, no GitHub. Only push to a public repo if the user said public in so many words.
+   - **Model and effort:**
+     - Which model: Sonnet 5 (recommended for implementation), Opus (hard research or design), or the Claude Code default from settings.json.
+     - Which effort: low, medium, high or xhigh, or the default.
+     - Default: Claude Code's defaults.
+   - **Location:** a new folder (and its name under `~/build/`) or an existing project path. Default: a new `~/build/<slug>`.
+   - **Done criteria and limits:**
+     - What counts as finished (tests passing, a smoke test, a deploy).
+     - Which live or external actions are allowed: real accounts, sending, posting, deploys, sudo.
+     - Which secrets or logins the build needs.
+     - Any cost or time cap.
+     - Default: tests plus a local smoke test, no live writes, no sudo.
+   Put every answer into SPEC.md and the task prompt, so the headless run has them and never has to ask.
 1. **Prepare.** Pick or create the project folder in WSL. For anything non-trivial, write a SPEC.md and a short project CLAUDE.md first. Write the task prompt to `<dir>/.cc/<name>.txt`. Make it self-contained: say the run is headless with no human, that it should make reasonable decisions and log them in DECISIONS.md, and that it must end with a status of done / next / blockers / questions.
-2. **Choose a model.** Use `claude-sonnet-5` for implementation and Opus for hard research or design. Do not use Haiku: auto mode does not apply to it, so its file writes get denied.
+2. **Model and effort.** Use what step 0 settled. Pass an empty string to use the Claude Code defaults. Do not use Haiku: auto mode does not apply to it, so its file writes get denied. If the user picks Haiku, explain this and suggest Sonnet 5.
 3. **Schedule the wake-up.** Call `send_later` with `delay_minutes` set to about 2× the expected run time plus 10, as a fallback only. The message must name the folder and say: "read only <dir>/.cc/status.json". Keep the returned `trigger_id`.
-4. **Launch.** Run `~/bin/cc-run <dir> <uuid> <prompt-file> new <trigger_id> <model>`, using `uuidgen` for the uuid and keeping it for resumes. It must print `started sid ...`; if it prints FAILED, show the runner.log lines.
+4. **Launch.** Run `~/bin/cc-run <dir> <uuid> <prompt-file> new <trigger_id> "<model>" "<effort>"`, using `uuidgen` for the uuid and keeping it for resumes. Pass `""` for either to use the default. It must print `started sid ...`; if it prints FAILED, show the runner.log lines.
 5. **Go idle.** Tell the user in one line what's running and that you'll wake when it stops. End the turn. Do not poll.
 6. **On wake.** Call ReadNotifications, then read only `<dir>/.cc/status.json`. If the fallback fired, also read `.cc/wake.log`.
    - `running`: the fallback fired before the run finished. Schedule a new `send_later` and go idle again.
    - `done` with no open questions: review the `result` text, spot-check specific files only if needed, and report to the user.
-   - `done` with questions or blockers: write the answers to a new prompt file, schedule a new `send_later`, and run `cc-run <dir> <same uuid> <answers-file> resume <new trigger_id> <model>`. Go idle.
+   - `done` with questions or blockers: write the answers to a new prompt file, schedule a new `send_later`, and run `cc-run <dir> <same uuid> <answers-file> resume <new trigger_id> "<model>" "<effort>"`. Go idle.
    - `error`: run `~/bin/cc-tail <dir>/.cc/latest.jsonl 10` and decide whether to fix and resume or report.
 7. After 3 resume loops without finishing, stop and check with the user.
 
 ## Rules
+- Git and GitHub steps go in the task prompt: when to commit, and whether to `gh repo create` and push (with name and visibility). Never let the headless run decide to make anything public.
 - Each wake-up fires only once. Make a new one for every launch or resume.
 - The wake fire carries no text; extra text is rejected. The status file carries the information.
 - Keep `wsl-exec` commands short. Commands containing `>`, `rm`, `mv` and similar need a confirmation call, which echoes the whole command back.
