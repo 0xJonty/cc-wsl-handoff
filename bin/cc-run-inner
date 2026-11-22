@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+source ~/.nvm/nvm.sh >/dev/null 2>&1; export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
+dir="$1"; sid="$2"; pf="$3"; mode="$4"; trig="$5"; model="$6"; cd "$dir" || exit 1
+flag=--session-id; [ "$mode" = resume ] && flag=--resume
+log="$dir/.cc/$sid.$(date +%s).jsonl"; ln -sfn "$log" "$dir/.cc/latest.jsonl"
+echo '{"state":"running"}' > .cc/status.json
+claude -p "$(cat "$pf")" $flag "$sid" ${model:+--model "$model"} --permission-mode auto --output-format stream-json --verbose \
+  --settings '{"effortLevel":"high","disableClaudeAiConnectors":true}' > "$log" 2>&1 < /dev/null
+python3 ~/bin/cc-status "$log" "$?" > .cc/status.json.tmp && mv .cc/status.json.tmp .cc/status.json
+if [ -n "$trig" ]; then
+  claude -p "Use the RemoteTrigger tool to run trigger $trig now with NO text. Reply only OK or the exact error." \
+    --model claude-sonnet-5 --permission-mode auto \
+    --settings '{"disableClaudeAiConnectors":true}' > .cc/wake.log 2>&1 < /dev/null
+fi

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# cc-run <dir> <session-uuid> <prompt-file> <new|resume> [wake-trigger-id] [model]
+# Detached headless Claude Code run. On exit: writes <dir>/.cc/status.json, then fires the
+# wake trigger (no text) so the supervising chat wakes. Log: <dir>/.cc/latest.jsonl
+dir=$(realpath "$1"); sid="$2"; pf=$(realpath "$3"); mode="$4"; trig="$5"; model="$6"
+mkdir -p "$dir/.cc"; rm -f "$dir/.cc/status.json"
+setsid -f bash "$HOME/bin/cc-run-inner" "$dir" "$sid" "$pf" "$mode" "$trig" "$model" >"$dir/.cc/runner.log" 2>&1 </dev/null
+sleep 3; grep -q running "$dir/.cc/status.json" 2>/dev/null && echo "started sid $sid" || { echo "FAILED to start"; cat "$dir/.cc/runner.log"; }

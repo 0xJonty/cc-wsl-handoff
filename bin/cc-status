@@ -1,0 +1,12 @@
+#!/usr/bin/env python3
+# cc-status <log> <exit-code>: compact JSON summary of a finished headless run
+import json,sys
+r=None
+for l in open(sys.argv[1],errors='replace'):
+    try: e=json.loads(l)
+    except Exception: continue
+    if e.get('type')=='result': r=e
+out={"state":"error","exit":int(sys.argv[2])}
+if r: out.update(state="done" if r.get("subtype")=="success" else "error",turns=r.get("num_turns"),
+    cost=round(r.get("total_cost_usd",0),2),minutes=round(r.get("duration_ms",0)/60000,1),result=str(r.get("result",""))[-4000:])
+print(json.dumps(out))
